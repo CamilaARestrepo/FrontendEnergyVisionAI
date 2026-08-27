@@ -1,0 +1,398 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   THEME INLINE — Shadcn token bridge
+   ============================================================ */
+@theme inline {
+  --font-heading: 'Geist Variable', sans-serif;
+  --font-sans: 'Geist Variable', sans-serif;
+  --font-mono: 'Geist Mono', 'Fira Code', monospace;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+}
+
+/* ============================================================
+   DESIGN TOKENS — Paleta EnergyVision (Dark-first)
+   ============================================================ */
+@theme {
+  /* Brand — Esmeralda energética */
+  --color-brand-50:  oklch(0.97 0.03 158);
+  --color-brand-100: oklch(0.93 0.06 158);
+  --color-brand-200: oklch(0.87 0.11 158);
+  --color-brand-300: oklch(0.78 0.17 158);
+  --color-brand-400: oklch(0.68 0.20 158);
+  --color-brand-500: oklch(0.59 0.22 158);
+  --color-brand-600: oklch(0.50 0.20 158);
+  --color-brand-700: oklch(0.42 0.17 158);
+  --color-brand-800: oklch(0.33 0.13 158);
+  --color-brand-900: oklch(0.24 0.09 158);
+
+  /* Amber — Energía calorífica */
+  --color-energy-400: oklch(0.83 0.16 78);
+  --color-energy-500: oklch(0.76 0.19 74);
+  --color-energy-600: oklch(0.67 0.18 68);
+
+  /* Danger */
+  --color-danger-500: oklch(0.63 0.22 27);
+
+  /* Superficie oscura */
+  --color-surface-900: oklch(0.10 0.01 260);
+  --color-surface-800: oklch(0.13 0.01 260);
+  --color-surface-700: oklch(0.16 0.015 260);
+  --color-surface-600: oklch(0.20 0.015 260);
+  --color-surface-500: oklch(0.27 0.012 260);
+  --color-surface-400: oklch(0.40 0.01 260);
+  --color-surface-200: oklch(0.65 0.006 260);
+  --color-surface-100: oklch(0.82 0.004 260);
+}
+
+/* ============================================================
+   DARK MODE — Root principal (EnergyVision usa dark por defecto)
+   ============================================================ */
+:root {
+  --background: oklch(0.10 0.01 260);
+  --foreground: oklch(0.94 0.005 260);
+
+  --card: oklch(0.14 0.012 260);
+  --card-foreground: oklch(0.94 0.005 260);
+
+  --popover: oklch(0.16 0.013 260);
+  --popover-foreground: oklch(0.94 0.005 260);
+
+  /* Primary = verde esmeralda */
+  --primary: oklch(0.59 0.22 158);
+  --primary-foreground: oklch(0.99 0 0);
+
+  --secondary: oklch(0.18 0.015 260);
+  --secondary-foreground: oklch(0.82 0.006 260);
+
+  --muted: oklch(0.18 0.012 260);
+  --muted-foreground: oklch(0.55 0.01 260);
+
+  --accent: oklch(0.20 0.015 260);
+  --accent-foreground: oklch(0.82 0.006 260);
+
+  --destructive: oklch(0.63 0.22 27);
+
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.59 0.22 158);
+
+  /* Chart colors — Energía */
+  --chart-1: oklch(0.59 0.22 158);   /* emerald */
+  --chart-2: oklch(0.76 0.19 74);    /* amber */
+  --chart-3: oklch(0.63 0.20 240);   /* blue */
+  --chart-4: oklch(0.63 0.22 27);    /* red */
+  --chart-5: oklch(0.70 0.15 295);   /* purple */
+
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: oklch(0.115 0.012 260);
+  --sidebar-foreground: oklch(0.82 0.006 260);
+  --sidebar-primary: oklch(0.59 0.22 158);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.18 0.015 260);
+  --sidebar-accent-foreground: oklch(0.82 0.006 260);
+  --sidebar-border: oklch(1 0 0 / 6%);
+  --sidebar-ring: oklch(0.59 0.22 158);
+
+  /* Adaptive utilities */
+  --grid-line: oklch(1 0 0 / 4.5%);           /* Blanco muy sutil sobre oscuro */
+  --stat-card-border: oklch(1 0 0 / 8%);      /* Borde sutil en dark */
+  --stat-card-bg: oklch(1 0 0 / 3%);          /* Fondo muy sutil en dark */
+}
+
+/* Light mode override — para quien lo prefiera */
+.light {
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.12 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.12 0.01 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.12 0.01 260);
+  --primary: oklch(0.50 0.20 158);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.005 260);
+  --secondary-foreground: oklch(0.20 0.01 260);
+  --muted: oklch(0.96 0.005 260);
+  --muted-foreground: oklch(0.48 0.01 260);
+  --accent: oklch(0.95 0.01 158);
+  --accent-foreground: oklch(0.25 0.01 260);
+  --border: oklch(0.90 0.005 260);
+  --input: oklch(0.92 0.004 260);
+  --ring: oklch(0.50 0.20 158);
+  --sidebar: oklch(0.97 0.005 260);
+  --sidebar-foreground: oklch(0.20 0.01 260);
+  --sidebar-primary: oklch(0.50 0.20 158);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.93 0.01 260);
+  --sidebar-accent-foreground: oklch(0.20 0.01 260);
+  --sidebar-border: oklch(0.90 0.005 260);
+
+  /* Adaptive utilities */
+  --grid-line: oklch(0 0 0 / 6%);              /* Negro muy sutil sobre blanco */
+  --stat-card-border: oklch(0 0 0 / 8%);       /* Borde sutil en light */
+  --stat-card-bg: oklch(0 0 0 / 2.5%);         /* Fondo muy sutil en light */
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+@layer base {
+  *, *::before, *::after {
+    @apply border-border outline-ring/50;
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Geist Variable', system-ui, sans-serif;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Geist Variable', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  /* Scrollbar dark */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(1 0 0 / 12%);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(1 0 0 / 20%);
+  }
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+@layer components {
+
+  /* Grid background texture — visible en dark y light */
+  .bg-grid {
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: oklch(1 0 0 / 4%);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid oklch(1 0 0 / 8%);
+  }
+
+  .glass-subtle {
+    background: oklch(1 0 0 / 2%);
+    backdrop-filter: blur(8px);
+    border: 1px solid oklch(1 0 0 / 6%);
+  }
+
+  /* Glow effects */
+  .glow-green {
+    box-shadow: 0 0 20px oklch(0.59 0.22 158 / 30%), 0 0 40px oklch(0.59 0.22 158 / 15%);
+  }
+
+  .glow-green-sm {
+    box-shadow: 0 0 10px oklch(0.59 0.22 158 / 25%);
+  }
+
+  .glow-amber {
+    box-shadow: 0 0 20px oklch(0.76 0.19 74 / 30%), 0 0 40px oklch(0.76 0.19 74 / 15%);
+  }
+
+  /* Brand gradient */
+  .gradient-brand {
+    background: linear-gradient(135deg, oklch(0.59 0.22 158), oklch(0.48 0.19 200));
+  }
+
+  .gradient-energy {
+    background: linear-gradient(135deg, oklch(0.59 0.22 158), oklch(0.76 0.19 74));
+  }
+
+  .text-gradient-brand {
+    background: linear-gradient(135deg, oklch(0.59 0.22 158), oklch(0.76 0.19 74));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Active nav pill */
+  .nav-active {
+    background: oklch(0.59 0.22 158 / 15%);
+    color: oklch(0.72 0.18 158);
+    border: 1px solid oklch(0.59 0.22 158 / 25%);
+  }
+
+  .nav-inactive {
+    color: oklch(0.55 0.01 260);
+    border: 1px solid transparent;
+  }
+
+  .nav-inactive:hover {
+    background: oklch(1 0 0 / 5%);
+    color: oklch(0.82 0.006 260);
+  }
+
+  /* Card hover state */
+  .card-hover {
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px oklch(0 0 0 / 30%);
+    border-color: oklch(0.59 0.22 158 / 30%);
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply rounded-xl p-4 border flex flex-col gap-1;
+    border-color: var(--stat-card-border);
+    background: var(--stat-card-bg);
+  }
+
+  /* Energy score ring */
+  .score-ring-high  { color: oklch(0.59 0.22 158); }
+  .score-ring-mid   { color: oklch(0.76 0.19 74);  }
+  .score-ring-low   { color: oklch(0.63 0.22 27);  }
+}
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@layer utilities {
+
+  /* Fade + slide up */
+  .animate-in {
+    opacity: 0;
+    animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Stagger delays */
+  .stagger-1 { animation-delay: 60ms;  }
+  .stagger-2 { animation-delay: 120ms; }
+  .stagger-3 { animation-delay: 180ms; }
+  .stagger-4 { animation-delay: 240ms; }
+  .stagger-5 { animation-delay: 300ms; }
+
+  /* Pulse glow border */
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 8px oklch(0.59 0.22 158 / 40%); }
+    50%       { box-shadow: 0 0 20px oklch(0.59 0.22 158 / 70%); }
+  }
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Scan line */
+  @keyframes scan-line {
+    0%   { top: 0%; opacity: 0.8; }
+    100% { top: 100%; opacity: 0; }
+  }
+  .scan-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, oklch(0.59 0.22 158), transparent);
+    animation: scan-line 2s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Float */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+  }
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Rotate slow */
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+
+  /* Border rotate gradient */
+  @keyframes border-rotate {
+    from { --border-angle: 0deg; }
+    to   { --border-angle: 360deg; }
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
