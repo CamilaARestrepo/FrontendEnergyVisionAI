@@ -8,6 +8,7 @@ interface ScanState {
   isScanning: boolean;
 
   setFile: (file: File | null) => void;
+  setFileList: (file: File | null) => void;
   setScanningState: (scanning: boolean) => void;
   setScanResult: (result: ScanResponse | null) => void;
   clearResult: () => void;  // Limpia solo el resultado (mantiene archivo)

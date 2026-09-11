@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-// Vite env vars en React
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Vite env vars en React (soporta VITE_API_URL o VITE_API_BASE_URL)
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') ||
+  'http://localhost:8000';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api/v1`,

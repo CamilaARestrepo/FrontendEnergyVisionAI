@@ -54,7 +54,10 @@ import {
 import ObjectDetailModal from '@/components/history/ObjectDetailModal';
 import { objectsService } from '@/services/objects.service';
 
-const BACKEND_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8000';
+const BACKEND_BASE =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') ||
+  'http://localhost:8000';
 
 /* ── helpers ────────────────────────────────────────────────── */
 const categoryColors: Record<string, string> = {
@@ -144,7 +147,8 @@ export default function HistoryPage() {
 
   const PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100];
 
-  const handlePageSizeChange = (value: string) => {
+  const handlePageSizeChange = (value: string | null) => {
+    if (value == null) return;
     setPageSize(Number(value));
     setPage(1);
   };
