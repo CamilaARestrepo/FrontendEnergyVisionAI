@@ -142,7 +142,7 @@ export default function Dashboard() {
                     size={18}
                     className="group-hover:rotate-12 transition-transform duration-200"
                   />
-                  Iniciar Profiling Ecológico
+                  Iniciar Scanner Ecológico
                 </Button>
               </div>
             )}
