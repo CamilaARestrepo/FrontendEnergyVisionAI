@@ -179,7 +179,7 @@ export default function ObjectDetailModal({ object: obj, open, onClose, onDelete
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       {/* max-w-2xl = 672px — ancho suficiente sin exceder viewports medianos */}
-      <DialogContent className="w-full max-w-2xl border-border/60 bg-card shadow-2xl p-0 overflow-hidden gap-0">
+      <DialogContent className="w-full max-w-2xl border-border/60 bg-card shadow-2xl p-0 overflow-hidden gap-0 max-h-[100dvh] sm:max-h-none">
 
         {/* ══════════════════════════════════════════════
             HEADER — Imagen + Nombre + Meta
@@ -247,8 +247,10 @@ export default function ObjectDetailModal({ object: obj, open, onClose, onDelete
 
         {/* ══════════════════════════════════════════════
             BODY — Scroll sólo en el cuerpo
+            (mobile: se limita al alto real del viewport para
+             que el footer con "Cerrar" nunca quede cortado)
         ══════════════════════════════════════════════ */}
-        <div className="overflow-y-auto max-h-[60vh]">
+        <div className="overflow-y-auto max-h-[calc(100dvh-16rem)] sm:max-h-[60vh]">
 
           {/* ── Materia Base ─────────────────────────── */}
           <div className="p-5 border-b border-border/30">
