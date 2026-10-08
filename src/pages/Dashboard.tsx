@@ -194,14 +194,7 @@ export default function Dashboard() {
       {/* Results Panel */}
       {lastResult && (
         <div className="w-full animate-in stagger-1">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-            <div className="flex items-center gap-3 flex-1 min-w-[180px]">
-              <Separator className="opacity-30" />
-              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
-                Resultados del Análisis
-              </span>
-              <Separator className="opacity-30" />
-            </div>
+          <div className="flex flex-wrap items-center gap-3 mb-6">
             <Button
               variant="ghost"
               size="sm"
@@ -211,6 +204,13 @@ export default function Dashboard() {
               <RotateCcw size={13} />
               Nuevo scan
             </Button>
+            <div className="flex items-center gap-3 flex-1 min-w-[180px]">
+              <Separator className="opacity-30" />
+              <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
+                Resultados del Análisis
+              </span>
+              <Separator className="opacity-30" />
+            </div>
           </div>
           <ScanResultsPanel data={lastResult} />
         </div>
