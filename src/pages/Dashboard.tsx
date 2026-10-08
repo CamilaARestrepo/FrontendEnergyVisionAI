@@ -14,7 +14,7 @@ import { useScanStore } from '@/store/scan.store';
 import { useScan } from '@/hooks/useScan';
 import ImageUploader from '@/components/dashboard/ImageUploader';
 import ScanResultsPanel from '@/components/dashboard/ScanResultsPanel';
-import { Leaf, ScanSearch, Zap, Recycle, Activity, RotateCcw } from 'lucide-react';
+import { Leaf, ScanSearch, Zap, Recycle, Activity, RotateCcw, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -47,8 +47,15 @@ export default function Dashboard() {
   const { currentFile, lastResult, clearScan } = useScanStore();
 
 
-  const { scan, isPending } = useScan({
+  const { scan: scanImage, scanForce, isPending } = useScan({
     onSuccess: (data) => {
+      if (data.cached) {
+        toast.info('Resultado desde la base de datos', {
+          description: 'Esta imagen ya fue analizada. Se reutilizó el resultado guardado para ahorrar análisis IA.',
+          duration: 5000,
+        });
+        return;
+      }
       const name = data.object.object_name;
       const score = data.energy?.energy_score ?? data.object.energy_data?.energy_score;
       toast.success('Análisis completado', {
@@ -67,7 +74,13 @@ export default function Dashboard() {
 
   const handleScanTrigger = () => {
     if (currentFile && !isPending) {
-      scan(currentFile);
+      scanImage(currentFile);
+    }
+  };
+
+  const handleReScanTrigger = () => {
+    if (currentFile && !isPending) {
+      scanForce(currentFile);
     }
   };
 
@@ -195,15 +208,30 @@ export default function Dashboard() {
               </span>
               <Separator className="opacity-30" />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleNewScan}
-              className="ml-4 gap-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
-            >
-              <RotateCcw size={13} />
-              Nuevo scan
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              {lastResult.cached && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReScanTrigger}
+                  disabled={isPending}
+                  className="gap-2 text-xs text-amber-400 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400"
+                  title="Ignora la caché y vuelve a ejecutar el análisis con IA"
+                >
+                  <RefreshCw size={13} />
+                  Volver a analizar
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNewScan}
+                className="ml-1 gap-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <RotateCcw size={13} />
+                Nuevo scan
+              </Button>
+            </div>
           </div>
           <ScanResultsPanel data={lastResult} />
         </div>

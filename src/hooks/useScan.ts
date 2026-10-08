@@ -17,8 +17,8 @@ interface UseScanOptions {
 export function useScan({ onSuccess, onError }: UseScanOptions = {}) {
   const { setScanningState, setScanResult, clearResult } = useScanStore();
 
-  const mutation = useMutation<ScanResponse, Error, File>({
-    mutationFn: (file: File) => scanService.scanObject(file),
+  const mutation = useMutation<ScanResponse, Error, { file: File; force?: boolean }>({
+    mutationFn: ({ file, force }) => scanService.scanObject(file, undefined, force),
 
     onMutate: () => {
       clearResult();
@@ -38,8 +38,10 @@ export function useScan({ onSuccess, onError }: UseScanOptions = {}) {
   });
 
   return {
-    scan: mutation.mutate,
-    scanAsync: mutation.mutateAsync,
+    scan: (file: File) => mutation.mutate({ file }),
+    scanForce: (file: File) => mutation.mutate({ file, force: true }),
+    scanAsync: (file: File, opts?: { force?: boolean }) =>
+      mutation.mutateAsync({ file, force: opts?.force }),
     isPending: mutation.isPending,
     isSuccess: mutation.isSuccess,
     isError: mutation.isError,

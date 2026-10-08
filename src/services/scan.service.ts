@@ -2,11 +2,15 @@ import { api } from './api';
 import type { ScanResponse } from '../types/scan.types';
 
 export const scanService = {
-  scanObject: async (imageFile: File, notes?: string): Promise<ScanResponse> => {
+  scanObject: async (imageFile: File, notes?: string, force = false): Promise<ScanResponse> => {
     const formData = new FormData();
     formData.append('image', imageFile);
     if (notes) {
       formData.append('notes', notes);
+    }
+    if (force) {
+      // fuerza re-análisis ignorando la caché RAG (imágenes duplicadas)
+      formData.append('force', 'true');
     }
 
     const { data } = await api.post('/scan', formData, {

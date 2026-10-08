@@ -12,6 +12,7 @@ import {
   BatteryCharging,
   Box,
   Cpu,
+  Database,
   Recycle,
   CheckCircle2,
   ShieldAlert,
@@ -116,6 +117,19 @@ export default function ScanResultsPanel({ data }: ResultProps) {
       </div>
 
       <Separator className="opacity-30" />
+
+      {/* Caché RAG: resultado recuperado de la BD sin nuevo análisis */}
+      {data.cached && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/10 border border-primary/25 animate-in">
+          <Database size={18} className="text-primary mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-primary">Resultado desde la base de datos</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Esta imagen ya había sido analizada. Se reutilizó el resultado guardado sin ejecutar el análisis de IA.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Cards grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

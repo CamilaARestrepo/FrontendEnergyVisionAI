@@ -16,5 +16,6 @@ export interface ScanResponse {
   energy?: ScanEnergyResponse;
   ai_provider?: string;
   ai_model?: string;
+  cached?: boolean;         // True si el resultado se leyó de la BD (imagen duplicada, caché RAG)
   processing_time_ms: number;
 }
