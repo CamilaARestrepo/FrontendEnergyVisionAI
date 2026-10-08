@@ -14,7 +14,7 @@ import { useScanStore } from '@/store/scan.store';
 import { useScan } from '@/hooks/useScan';
 import ImageUploader from '@/components/dashboard/ImageUploader';
 import ScanResultsPanel from '@/components/dashboard/ScanResultsPanel';
-import { Leaf, ScanSearch, Zap, Recycle, Activity, RotateCcw, RefreshCw } from 'lucide-react';
+import { Leaf, ScanSearch, Zap, Recycle, Activity, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -47,7 +47,7 @@ export default function Dashboard() {
   const { currentFile, lastResult, clearScan } = useScanStore();
 
 
-  const { scan: scanImage, scanForce, isPending } = useScan({
+  const { scan: scanImage, isPending } = useScan({
     onSuccess: (data) => {
       if (data.cached) {
         toast.info('Resultado desde la base de datos', {
@@ -78,12 +78,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleReScanTrigger = () => {
-    if (currentFile && !isPending) {
-      scanForce(currentFile);
-    }
-  };
-
   const handleNewScan = () => {
     clearScan();
   };
@@ -107,7 +101,7 @@ export default function Dashboard() {
           </span>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3 leading-tight">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 leading-tight">
           Scanner{' '}
           <span className="text-gradient-brand">Multimodal</span>
         </h1>
@@ -117,17 +111,17 @@ export default function Dashboard() {
         </p>
 
         {/* Quick stats strip */}
-        <div className="flex items-center gap-4 mt-5 flex-wrap">
+        <div className="grid grid-cols-3 sm:flex sm:items-center gap-3 sm:gap-4 mt-5">
           {stats.map((s) => {
             const Icon = s.icon;
             return (
-              <div key={s.label} className="flex items-center gap-2 text-xs">
-                <div className={`p-1.5 rounded-md ${s.bg}`}>
+              <div key={s.label} className="flex items-center gap-2 text-xs min-w-0">
+                <div className={`p-1.5 rounded-md shrink-0 ${s.bg}`}>
                   <Icon size={13} className={s.color} />
                 </div>
-                <div>
-                  <p className="text-muted-foreground">{s.label}</p>
-                  <p className={`font-semibold ${s.color}`}>{s.value}</p>
+                <div className="min-w-0">
+                  <p className="text-muted-foreground truncate">{s.label}</p>
+                  <p className={`font-semibold truncate ${s.color}`}>{s.value}</p>
                 </div>
               </div>
             );
@@ -149,7 +143,7 @@ export default function Dashboard() {
                 <Button
                   id="btn-start-scan"
                   onClick={handleScanTrigger}
-                  className="flex items-center gap-2 group bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg glow-green transition-all duration-300"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 group bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg glow-green transition-all duration-300"
                 >
                   <ScanSearch
                     size={18}
@@ -200,38 +194,23 @@ export default function Dashboard() {
       {/* Results Panel */}
       {lastResult && (
         <div className="w-full animate-in stagger-1">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3 flex-1 min-w-[180px]">
               <Separator className="opacity-30" />
               <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground whitespace-nowrap">
                 Resultados del Análisis
               </span>
               <Separator className="opacity-30" />
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {lastResult.cached && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleReScanTrigger}
-                  disabled={isPending}
-                  className="gap-2 text-xs text-amber-400 border-amber-500/30 hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400"
-                  title="Ignora la caché y vuelve a ejecutar el análisis con IA"
-                >
-                  <RefreshCw size={13} />
-                  Volver a analizar
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNewScan}
-                className="ml-1 gap-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
-              >
-                <RotateCcw size={13} />
-                Nuevo scan
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNewScan}
+              className="gap-2 text-xs text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <RotateCcw size={13} />
+              Nuevo scan
+            </Button>
           </div>
           <ScanResultsPanel data={lastResult} />
         </div>

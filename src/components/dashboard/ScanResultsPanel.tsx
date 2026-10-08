@@ -6,11 +6,13 @@
  *   object.object_name, object.object_category, etc.
  */
 
+import { useState } from 'react';
 import type { ScanResponse } from '../../types/scan.types';
 import {
   AlertTriangle,
   BatteryCharging,
   Box,
+  ChevronDown,
   Cpu,
   Database,
   Recycle,
@@ -67,6 +69,7 @@ function parseListField(value: string | string[] | undefined): string[] {
 
 export default function ScanResultsPanel({ data }: ResultProps) {
   const { object, energy, ai_provider, ai_model, processing_time_ms } = data;
+  const [descExpanded, setDescExpanded] = useState(false);
 
   // Normalizar campos — el backend usa object_name, object_category, etc.
   const objectName = object.object_name;
@@ -75,6 +78,10 @@ export default function ScanResultsPanel({ data }: ResultProps) {
   const objectCondition = object.object_condition;
   const objectDescription = object.description;
   const confidencePct = Math.round((object.confidence_score ?? 0) * 100);
+
+  // La descripción puede ser larga (1-2 párrafos); en móvil se colapsa con "Ver más"
+  const descriptionText = objectDescription || 'Objeto procesado sin metadata enriquecida.';
+  const hasLongDescription = (objectDescription?.length ?? 0) > 160;
 
   // energy puede venir de ScanResponse.energy o de object.energy_data (historial)
   const energyData = energy ?? object.energy_data;
@@ -85,27 +92,40 @@ export default function ScanResultsPanel({ data }: ResultProps) {
     <div className="flex flex-col gap-6 animate-in">
 
       {/* Header banner */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 size={16} className="text-primary shrink-0" />
-            <h2 className="text-xl font-bold text-foreground truncate">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
               {objectName}
             </h2>
           </div>
-          <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-            {objectDescription || 'Objeto procesado sin metadata enriquecida.'}
+          <p className={`text-muted-foreground text-sm leading-relaxed ${descExpanded ? '' : 'line-clamp-3'}`}>
+            {descriptionText}
           </p>
+          {hasLongDescription && (
+            <button
+              type="button"
+              onClick={() => setDescExpanded((v) => !v)}
+              className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              <ChevronDown
+                size={13}
+                className={`transition-transform ${descExpanded ? 'rotate-180' : ''}`}
+              />
+              {descExpanded ? 'Ver menos' : 'Ver más'}
+            </button>
+          )}
         </div>
 
-        <div className="shrink-0 text-right flex flex-col items-end gap-1">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Engine</p>
+        <div className="shrink-0 flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 flex-wrap">
+          <p className="hidden sm:block text-[10px] uppercase tracking-widest text-muted-foreground">Engine</p>
           <Badge
             variant="outline"
-            className="gap-1.5 text-primary border-primary/30 bg-primary/10"
+            className="gap-1.5 text-primary border-primary/30 bg-primary/10 max-w-full"
           >
-            <Cpu size={12} />
-            {ai_provider ?? object.ai_provider} · {ai_model ?? object.ai_model}
+            <Cpu size={12} className="shrink-0" />
+            <span className="truncate">{ai_provider ?? object.ai_provider} · {ai_model ?? object.ai_model}</span>
           </Badge>
           {processing_time_ms != null && (
             <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
