@@ -78,6 +78,13 @@ export default function ScanResultsPanel({ data }: ResultProps) {
   const objectCondition = object.object_condition;
   const objectDescription = object.description;
   const confidencePct = Math.round((object.confidence_score ?? 0) * 100);
+  const objectImagePath = object.image_path;
+
+  // Construir URL completa de la imagen
+  const apiBaseUrl = import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') ||
+    'http://localhost:8000';
+  const objectImageUrl = objectImagePath ? `${apiBaseUrl}${objectImagePath}` : null;
 
   // La descripción puede ser larga (1-2 párrafos); en móvil se colapsa con "Ver más"
   const descriptionText = objectDescription || 'Objeto procesado sin metadata enriquecida.';
@@ -117,6 +124,18 @@ export default function ScanResultsPanel({ data }: ResultProps) {
             </button>
           )}
         </div>
+
+        {/* Miniatura de la imagen escaneada */}
+        {objectImageUrl && (
+          <div className="shrink-0 hidden sm:block">
+            <img
+              src={objectImageUrl}
+              alt={objectName}
+              className="w-24 h-24 object-cover rounded-xl border border-border/50 shadow-md"
+              loading="lazy"
+            />
+          </div>
+        )}
 
         <div className="shrink-0 flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 flex-wrap">
           <p className="hidden sm:block text-[10px] uppercase tracking-widest text-muted-foreground">Engine</p>
