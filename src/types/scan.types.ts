@@ -8,6 +8,7 @@ export interface ScanEnergyResponse {
   waste_hierarchy_level?: string;
   ler_code?: string;
   is_hazardous?: boolean;
+  processing_notes?: string;
 }
 
 export interface ScanResponse {

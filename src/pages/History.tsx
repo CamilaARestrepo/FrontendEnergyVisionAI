@@ -52,6 +52,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import ObjectDetailModal from '@/components/history/ObjectDetailModal';
+import HistoryStats from '@/components/dashboard/HistoryStats';
 import { objectsService } from '@/services/objects.service';
 
 const BACKEND_BASE =
@@ -216,6 +217,8 @@ export default function HistoryPage() {
           </Button>
         </div>
       </div>
+
+      <HistoryStats />
 
       <Separator className="opacity-30" />
 

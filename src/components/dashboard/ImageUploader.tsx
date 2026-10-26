@@ -44,7 +44,7 @@ export default function ImageUploader() {
         <img
           src={previewUrl}
           alt="Preview"
-          className={`w-full h-72 object-cover transition-all duration-500 ${
+          className={`w-full h-60 sm:h-72 object-cover transition-all duration-500 ${
             isScanning ? 'opacity-40 scale-105 blur-[2px]' : ''
           }`}
         />
@@ -103,7 +103,7 @@ export default function ImageUploader() {
   /* ── Drop Zone ──────────────────────────────────────────────── */
   return (
     <div
-      className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer w-full h-72 relative overflow-hidden
+      className={`border-2 border-dashed rounded-2xl p-6 sm:p-10 flex flex-col items-center justify-center text-center transition-all duration-300 cursor-pointer w-full h-60 sm:h-72 relative overflow-hidden
         ${
           isDragging
             ? 'border-primary bg-primary/5 animate-pulse-glow'

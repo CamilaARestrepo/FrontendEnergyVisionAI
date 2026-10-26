@@ -1,8 +1,17 @@
 import { api } from './api';
-import type { DetectedObject, PaginatedObjectsResponse } from '../types/object.types';
+import type {
+  DetectedObject,
+  ObjectStats,
+  PaginatedObjectsResponse,
+} from '../types/object.types';
 import type { ObjectsFilters } from '@/hooks/useObjects';
 
 export const objectsService = {
+  /** Resumen agregado del historial para el mini dashboard del scanner. */
+  getStats: async (): Promise<ObjectStats> => {
+    const { data } = await api.get('/objects/stats');
+    return data;
+  },
   /**
    * Lista objetos con filtros, paginación y ordenamiento.
    * Nombre canónico esperado por useObjects hook.

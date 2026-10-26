@@ -38,3 +38,29 @@ export interface PaginatedObjectsResponse {
   page_size: number;
   pages: number;
 }
+
+export interface CategoryStat {
+  category: string;
+  count: number;
+}
+
+export interface RecentScan {
+  id: number;
+  object_name: string;
+  object_category: string;
+  image_path: string;
+  created_at: string;
+  energy_score?: number | null;
+  is_hazardous: boolean;
+}
+
+export interface ObjectStats {
+  total_scans: number;
+  avg_energy_score?: number | null;
+  avg_confidence?: number | null;
+  hazardous_count: number;
+  categories_count: number;
+  total_kwh?: number | null;
+  top_categories: CategoryStat[];
+  recent: RecentScan[];
+}

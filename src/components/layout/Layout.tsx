@@ -10,7 +10,7 @@ export default function Layout() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header />
-        <main className="flex-1 p-6 pb-24 md:p-8 md:pb-8 overflow-y-auto">
+        <main className="flex-1 p-4 pb-24 sm:p-6 md:p-8 md:pb-8 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
             <Outlet />
           </div>

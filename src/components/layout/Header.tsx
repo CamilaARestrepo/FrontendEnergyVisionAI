@@ -33,14 +33,14 @@ export default function Header() {
   return (
     <header className="h-14 flex items-center justify-between px-6 bg-card/60 border-b border-border backdrop-blur-md sticky top-0 z-20">
       
-      {/* Left: Breadcrumb */}
+      {/* Left: Breadcrumb — se oculta en móvil (la nav inferior ya muestra la sección) */}
       <div className="flex items-center gap-2 text-sm">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Zap size={13} className="text-primary" />
           <span className="hidden sm:inline">EnergyVision</span>
         </div>
-        <span className="text-muted-foreground/40">/</span>
-        <span className="font-semibold text-foreground">{pageLabel}</span>
+        <span className="hidden sm:inline text-muted-foreground/40">/</span>
+        <span className="hidden sm:inline font-semibold text-foreground">{pageLabel}</span>
       </div>
 
       {/* Right: Status + Actions */}

@@ -6,7 +6,11 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { objectsService } from '@/services/objects.service';
-import type { PaginatedObjectsResponse, DetectedObject } from '@/types/object.types';
+import type {
+  DetectedObject,
+  ObjectStats,
+  PaginatedObjectsResponse,
+} from '@/types/object.types';
 
 export interface ObjectsFilters {
   page?: number;
@@ -33,6 +37,18 @@ export function useObjects(filters: ObjectsFilters = {}) {
     queryFn: () => objectsService.getObjects({ page, page_size, ...rest }),
     placeholderData: (prev) => prev, // Mantiene datos anteriores mientras carga nueva página
     staleTime: 30_000, // 30s — el historial no cambia muy frecuentemente
+  });
+}
+
+/**
+ * Resumen agregado del historial para el mini dashboard del scanner.
+ * Comparte prefijo de query key con la lista para invalidarse en bloque.
+ */
+export function useObjectStats() {
+  return useQuery<ObjectStats>({
+    queryKey: [OBJECTS_QUERY_KEY, 'stats'],
+    queryFn: () => objectsService.getStats(),
+    staleTime: 30_000,
   });
 }
 

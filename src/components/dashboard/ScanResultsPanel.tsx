@@ -1,9 +1,10 @@
 /**
  * ScanResultsPanel — Muestra los resultados completos de un análisis.
  *
- * Acepta datos del tipo ScanResponse (POST /scan) o DetectedObject (GET /objects/:id).
- * Los campos están adaptados al schema canónico que devuelve el backend:
- *   object.object_name, object.object_category, etc.
+ * Layout compacto y amigable:
+ *  1. Hero: imagen + nombre + categoría + descripción + anillo de energía
+ *  2. Tres tarjetas densas: materia base, protocolo LER, potencial energético
+ *  3. Fila inferior: sugerencias de reutilización y alerta de peligrosidad
  */
 
 import { useState } from 'react';
@@ -13,18 +14,18 @@ import {
   BatteryCharging,
   Box,
   ChevronDown,
+  ClipboardList,
   Cpu,
   Database,
   Recycle,
-  CheckCircle2,
   ShieldAlert,
   Layers,
   Timer,
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 
 interface ResultProps {
   data: ScanResponse;
@@ -49,6 +50,12 @@ const getScoreColor = (score: number) => {
   return 'text-red-400';
 };
 
+const getScoreStroke = (score: number) => {
+  if (score >= 70) return 'oklch(0.68 0.20 158)';
+  if (score >= 40) return 'oklch(0.83 0.16 78)';
+  return 'oklch(0.63 0.22 27)';
+};
+
 const getScoreBarColor = (score: number) => {
   if (score >= 70) return '[&>div]:bg-emerald-500';
   if (score >= 40) return '[&>div]:bg-amber-500';
@@ -67,157 +74,208 @@ function parseListField(value: string | string[] | undefined): string[] {
   }
 }
 
+/** Anillo de progreso para el Energy Score */
+function ScoreRing({ value, size = 86 }: { value: number; size?: number }) {
+  const stroke = 8;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
+  const color = getScoreStroke(value);
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          className="text-muted/50"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={`text-2xl font-black leading-none ${getScoreColor(value)}`}>
+          {value}
+        </span>
+        <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+          / 100
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Fila etiqueta / valor reutilizable dentro de las tarjetas */
+function InfoRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium text-foreground/90 capitalize text-right break-words">
+        {value || 'N/A'}
+      </span>
+    </div>
+  );
+}
+
 export default function ScanResultsPanel({ data }: ResultProps) {
   const { object, energy, ai_provider, ai_model, processing_time_ms } = data;
   const [descExpanded, setDescExpanded] = useState(false);
 
-  // Normalizar campos — el backend usa object_name, object_category, etc.
   const objectName = object.object_name;
   const objectCategory = object.object_category;
   const objectMaterial = object.object_material;
+  const objectBrand = object.object_brand;
   const objectCondition = object.object_condition;
   const objectDescription = object.description;
   const confidencePct = Math.round((object.confidence_score ?? 0) * 100);
   const objectImagePath = object.image_path;
 
-  // Construir URL completa de la imagen
-  const apiBaseUrl = import.meta.env.VITE_API_URL ||
+  const apiBaseUrl =
+    import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_API_BASE_URL?.replace('/api/v1', '') ||
     'http://localhost:8000';
   const objectImageUrl = objectImagePath ? `${apiBaseUrl}${objectImagePath}` : null;
 
-  // La descripción puede ser larga (1-2 párrafos); en móvil se colapsa con "Ver más"
   const descriptionText = objectDescription || 'Objeto procesado sin metadata enriquecida.';
-  const hasLongDescription = (objectDescription?.length ?? 0) > 160;
+  const hasLongDescription = (objectDescription?.length ?? 0) > 140;
 
-  // energy puede venir de ScanResponse.energy o de object.energy_data (historial)
   const energyData = energy ?? object.energy_data;
   const score = energyData?.energy_score ?? 0;
   const valorizationMethods = parseListField(energyData?.valorization_methods as any);
+  const reuseSuggestions = parseListField(object.reuse_suggestions as any);
+  const provider = ai_provider ?? object.ai_provider;
+  const model = ai_model ?? object.ai_model;
 
   return (
-    <div className="flex flex-col gap-6 animate-in">
+    <div className="flex flex-col gap-4 animate-in">
 
-      {/* Header banner */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 size={16} className="text-primary shrink-0" />
-            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">
-              {objectName}
-            </h2>
-          </div>
-          <p className={`text-muted-foreground text-sm leading-relaxed ${descExpanded ? '' : 'line-clamp-3'}`}>
-            {descriptionText}
-          </p>
-          {hasLongDescription && (
-            <button
-              type="button"
-              onClick={() => setDescExpanded((v) => !v)}
-              className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              <ChevronDown
-                size={13}
-                className={`transition-transform ${descExpanded ? 'rotate-180' : ''}`}
-              />
-              {descExpanded ? 'Ver menos' : 'Ver más'}
-            </button>
-          )}
-        </div>
+      {/* ── Hero: imagen a la izquierda + resumen + energía ──────── */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card/70">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-amber-500/10" />
 
-        {/* Miniatura de la imagen escaneada */}
-        {objectImageUrl && (
-          <div className="shrink-0 hidden sm:block">
+        <div className="relative flex items-start gap-3 sm:gap-5 p-4 sm:p-5">
+          {objectImageUrl && (
             <img
               src={objectImageUrl}
               alt={objectName}
-              className="w-24 h-24 object-cover rounded-xl border border-border/50 shadow-md"
+              className="w-16 h-16 sm:w-28 sm:h-28 shrink-0 object-cover rounded-xl border border-border/50 shadow-md"
               loading="lazy"
             />
-          </div>
-        )}
-
-        <div className="shrink-0 flex sm:flex-col items-center sm:items-end gap-2 sm:gap-1 flex-wrap">
-          <p className="hidden sm:block text-[10px] uppercase tracking-widest text-muted-foreground">Engine</p>
-          <Badge
-            variant="outline"
-            className="gap-1.5 text-primary border-primary/30 bg-primary/10 max-w-full"
-          >
-            <Cpu size={12} className="shrink-0" />
-            <span className="truncate">{ai_provider ?? object.ai_provider} · {ai_model ?? object.ai_model}</span>
-          </Badge>
-          {processing_time_ms != null && (
-            <p className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-              <Timer size={10} />
-              {processing_time_ms}ms
-            </p>
           )}
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2 className="text-lg sm:text-xl font-bold text-foreground break-words line-clamp-2 max-w-full">
+                {objectName}
+              </h2>
+              {objectCategory && (
+                <Badge className="text-[10px] max-w-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 capitalize">
+                  {objectCategory}
+                </Badge>
+              )}
+              {energyData?.is_hazardous && (
+                <Badge className="gap-1 text-[10px] max-w-full bg-red-500/15 text-red-400 border-red-500/30">
+                  <ShieldAlert size={10} />
+                  Peligroso
+                </Badge>
+              )}
+            </div>
+
+            <p className={`text-muted-foreground text-[13px] leading-relaxed max-w-[52ch] ${descExpanded ? '' : 'line-clamp-2'}`}>
+              {descriptionText}
+            </p>
+            {hasLongDescription && (
+              <button
+                type="button"
+                onClick={() => setDescExpanded((v) => !v)}
+                className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                <ChevronDown
+                  size={12}
+                  className={`transition-transform ${descExpanded ? 'rotate-180' : ''}`}
+                />
+                {descExpanded ? 'Ver menos' : 'Ver más'}
+              </button>
+            )}
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1 min-w-0">
+                <Cpu size={11} className="text-primary shrink-0" />
+                <span className="truncate">{provider} · {model}</span>
+              </span>
+              {processing_time_ms != null && (
+                <span className="inline-flex items-center gap-1">
+                  <Timer size={11} />
+                  {processing_time_ms}ms
+                </span>
+              )}
+              <span className="inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                Confianza {confidencePct}%
+              </span>
+              <span className="sm:hidden inline-flex items-center gap-1 font-semibold text-amber-400">
+                <BatteryCharging size={11} />
+                {score}/100
+              </span>
+            </div>
+          </div>
+
+          {/* Energy score ring (desktop) */}
+          <div className="hidden sm:flex flex-col items-center gap-1 shrink-0 self-center">
+            <ScoreRing value={score} />
+            <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Energy Score
+            </span>
+          </div>
         </div>
       </div>
 
-      <Separator className="opacity-30" />
-
-      {/* Caché RAG: resultado recuperado de la BD sin nuevo análisis */}
+      {/* ── Caché RAG ─────────────────────────────────────────────── */}
       {data.cached && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-primary/10 border border-primary/25 animate-in">
-          <Database size={18} className="text-primary mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-primary">Resultado desde la base de datos</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Esta imagen ya había sido analizada. Se reutilizó el resultado guardado sin ejecutar el análisis de IA.
-            </p>
-          </div>
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/25">
+          <Database size={15} className="text-primary shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            <span className="font-semibold text-primary">Resultado desde la base de datos.</span>{' '}
+            Esta imagen ya había sido analizada; se reutilizó el resultado guardado.
+          </p>
         </div>
       )}
 
-      {/* Cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* ── Tarjetas de detalle ───────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        {/* ── Card 1: Materia Base ──────────────────────────────────── */}
-        <Card className="bg-card/60 border-border/60 card-hover">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-blue-500/15 text-blue-400 rounded-lg">
-                <Box size={16} />
+        {/* Card 1: Materia Base */}
+        <Card className="bg-card/60 border-border/60 card-hover h-full">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-500/15 text-blue-400 rounded-lg">
+                <Box size={15} />
               </div>
               <h3 className="font-semibold text-foreground text-sm">Materia Base</h3>
             </div>
           </CardHeader>
-          <CardContent className="px-5 pb-5 flex flex-col gap-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Objeto Capturado
-              </p>
-              <p className="text-base font-semibold text-foreground capitalize leading-tight">
-                {objectName}
-              </p>
-            </div>
+          <CardContent className="px-4 pb-4 flex flex-col gap-2.5">
+            <InfoRow label="Material" value={objectMaterial} />
+            <InfoRow label="Condición" value={objectCondition} />
+            {objectBrand && <InfoRow label="Marca" value={objectBrand} />}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Material
-                </p>
-                <p className="text-sm font-medium text-foreground/80 capitalize">
-                  {objectMaterial || 'N/A'}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Condición
-                </p>
-                <p className="text-sm font-medium text-foreground/80 capitalize">
-                  {objectCondition || 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            {/* Confidence */}
-            <div>
-              <div className="flex justify-between items-center mb-1.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Confianza IA
-                </p>
+            <div className="mt-auto pt-1">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[11px] text-muted-foreground">Confianza IA</span>
                 <span className="text-xs font-bold text-blue-400">{confidencePct}%</span>
               </div>
               <Progress value={confidencePct} className="h-1.5 bg-muted [&>div]:bg-blue-500" />
@@ -225,112 +283,87 @@ export default function ScanResultsPanel({ data }: ResultProps) {
           </CardContent>
         </Card>
 
-        {/* ── Card 2: Protocolo LER ─────────────────────────────────── */}
-        <Card className="bg-card/60 border-border/60 card-hover">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-emerald-500/15 text-emerald-400 rounded-lg">
-                  <Recycle size={16} />
+        {/* Card 2: Protocolo LER */}
+        <Card className="bg-card/60 border-border/60 card-hover h-full">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-emerald-500/15 text-emerald-400 rounded-lg">
+                  <Recycle size={15} />
                 </div>
                 <h3 className="font-semibold text-foreground text-sm">Protocolo LER</h3>
               </div>
-              {energyData?.is_hazardous && (
-                <Badge className="gap-1 bg-red-500/15 text-red-400 border-red-500/30 text-[10px]">
-                  <ShieldAlert size={10} />
-                  Peligroso
-                </Badge>
+              {energyData?.ler_code && (
+                <code className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-md tracking-wider">
+                  {energyData.ler_code}
+                </code>
               )}
             </div>
           </CardHeader>
-          <CardContent className="px-5 pb-5 flex flex-col gap-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                Categoría
-              </p>
-              <p className="text-sm font-semibold text-foreground/90 capitalize">
-                {objectCategory}
-              </p>
-            </div>
+          <CardContent className="px-4 pb-4 flex flex-col gap-2.5">
+            <InfoRow label="Categoría" value={objectCategory} />
 
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Código LER Europeo
-              </p>
-              <code className="text-sm font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-1 rounded-md inline-block tracking-wider">
-                {energyData?.ler_code || '—'}
-              </code>
-            </div>
-
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                Nivel Jerárquico
-              </p>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[11px] text-muted-foreground">Jerarquía</span>
               <Badge
-                className={`capitalize text-xs border ${getHierarchyStyle(
+                className={`capitalize text-[10px] border ${getHierarchyStyle(
                   energyData?.waste_hierarchy_level,
                 )}`}
               >
-                <Layers size={10} className="mr-1" />
+                <Layers size={9} className="mr-1" />
                 {energyData?.waste_hierarchy_level || 'No determinado'}
               </Badge>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 mt-auto pt-1">
+              <span className="text-[11px] text-muted-foreground">Residuo</span>
+              <span
+                className={`text-xs font-semibold ${
+                  energyData?.is_hazardous ? 'text-red-400' : 'text-emerald-400'
+                }`}
+              >
+                {energyData?.is_hazardous ? 'Peligroso' : 'No peligroso'}
+              </span>
             </div>
           </CardContent>
         </Card>
 
-        {/* ── Card 3: Potencial Energético ──────────────────────────── */}
-        <Card className="bg-card/60 border-amber-500/20 card-hover md:col-span-2 lg:col-span-1">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-amber-500/15 text-amber-400 rounded-lg">
-                <BatteryCharging size={16} />
+        {/* Card 3: Potencial Energético */}
+        <Card className="bg-card/60 border-amber-500/20 card-hover h-full">
+          <CardHeader className="pb-2 pt-4 px-4">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-amber-500/15 text-amber-400 rounded-lg">
+                <BatteryCharging size={15} />
               </div>
               <h3 className="font-semibold text-foreground text-sm">Potencial Energético</h3>
             </div>
           </CardHeader>
-          <CardContent className="px-5 pb-5 flex flex-col gap-4">
-            {/* Score big number */}
-            <div className="flex items-end gap-2">
-              <span className={`text-5xl font-black leading-none ${getScoreColor(score)}`}>
-                {score}
-              </span>
-              <div className="mb-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  / 100
-                </span>
-                <p className="text-[10px] text-muted-foreground">Energy Score</p>
-              </div>
-            </div>
+          <CardContent className="px-4 pb-4 flex flex-col gap-3">
+            <Progress value={score} className={`h-1.5 bg-muted/50 ${getScoreBarColor(score)}`} />
 
-            <Progress value={score} className={`h-2 bg-muted/50 ${getScoreBarColor(score)}`} />
-
-            <Separator className="opacity-20" />
-
-            {/* kWh metrics */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="stat-card">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border/50 bg-muted/20 px-2.5 py-2">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                   kWh / Unidad
                 </p>
-                <p className="text-lg font-bold text-foreground">
+                <p className="text-base font-bold text-foreground leading-tight">
                   {energyData?.kwh_per_unit?.toFixed(2) ?? '0.00'}
                 </p>
               </div>
-              <div className="stat-card">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="rounded-lg border border-border/50 bg-muted/20 px-2.5 py-2">
+                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                   kWh / Kg
                 </p>
-                <p className="text-lg font-bold text-foreground">
+                <p className="text-base font-bold text-foreground leading-tight">
                   {energyData?.kwh_per_kg?.toFixed(2) ?? '0.00'}
                 </p>
               </div>
             </div>
 
-            {/* Valorization methods */}
             {valorizationMethods.length > 0 && (
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  Métodos Viables
+              <div className="mt-auto">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Métodos viables
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {valorizationMethods.map((v, i) => (
@@ -348,33 +381,74 @@ export default function ScanResultsPanel({ data }: ResultProps) {
         </Card>
       </div>
 
-      {/* Reuse suggestions */}
-      {object.reuse_suggestions && parseListField(object.reuse_suggestions as any).length > 0 && (
-        <div className="p-5 rounded-xl bg-card/40 border border-border/50">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-            Sugerencias de Reutilización
+      {/* ── Gestión del residuo ───────────────────────────────────── */}
+      {(energyData?.processing_notes || energyData?.waste_hierarchy_level) && (
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <ClipboardList size={14} className="text-emerald-400 shrink-0" />
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">
+              Gestión del residuo
+            </p>
+          </div>
+          <p className="text-[13px] leading-relaxed text-foreground/80">
+            {energyData?.processing_notes ||
+              `Clasificado en la jerarquía como ${energyData?.waste_hierarchy_level}. Prioriza la prevención y la reutilización antes del reciclaje o la valorización energética.`}
           </p>
-          <ul className="flex flex-col gap-1.5">
-            {parseListField(object.reuse_suggestions as any).map((s, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-1.5 shrink-0" />
-                {s}
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {energyData?.ler_code && (
+              <Badge className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                LER {energyData.ler_code}
+              </Badge>
+            )}
+            {energyData?.waste_hierarchy_level && (
+              <Badge className={`text-[10px] capitalize border ${getHierarchyStyle(energyData.waste_hierarchy_level)}`}>
+                <Layers size={9} className="mr-1" />
+                {energyData.waste_hierarchy_level}
+              </Badge>
+            )}
+            {energyData?.is_hazardous && (
+              <Badge className="gap-1 text-[10px] bg-red-500/15 text-red-400 border-red-500/30">
+                <ShieldAlert size={9} />
+                Requiere gestor autorizado
+              </Badge>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Hazardous warning full-width */}
-      {energyData?.is_hazardous && (
-        <div className="flex items-start gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/25 animate-in">
-          <AlertTriangle size={18} className="text-red-400 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-red-400">Residuo Peligroso Detectado</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Este material requiere gestión especializada conforme a normativa LER. Contacta con un gestor autorizado.
-            </p>
-          </div>
+      {/* ── Fila inferior: reutilización + alerta ─────────────────── */}
+      {(reuseSuggestions.length > 0 || energyData?.is_hazardous) && (
+        <div className={`grid grid-cols-1 gap-4 ${reuseSuggestions.length > 0 && energyData?.is_hazardous ? 'lg:grid-cols-2' : ''}`}>
+          {reuseSuggestions.length > 0 && (
+            <div className="rounded-xl border border-border/60 bg-card/50 p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={14} className="text-primary" />
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  Sugerencias de Reutilización
+                </p>
+              </div>
+              <ul className="flex flex-col gap-1.5">
+                {reuseSuggestions.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-foreground/80 leading-relaxed">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-1.5 shrink-0" />
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {energyData?.is_hazardous && (
+            <div className="flex items-start gap-3 rounded-xl border border-red-500/25 bg-red-500/10 p-4">
+              <AlertTriangle size={17} className="text-red-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-red-400">Residuo Peligroso Detectado</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                  Requiere gestión especializada conforme a normativa LER. Contacta con un gestor autorizado.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
