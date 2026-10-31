@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useObjects, useDeleteObject } from '@/hooks/useObjects';
+import { useObjects, useDeleteObject, useObjectCategories } from '@/hooks/useObjects';
 import type { DetectedObject } from '@/types/object.types';
 import {
   DownloadCloud,
@@ -26,9 +26,11 @@ import {
   ChevronRight,
   Trash2,
   Loader2,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import DatePicker from '@/components/ui/date-picker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
@@ -145,8 +147,13 @@ export default function HistoryPage() {
   const [pageSize, setPageSize] = useState(5);
   const [selectedObj, setSelectedObj] = useState<DetectedObject | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [category, setCategory] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
 
   const PAGE_SIZE_OPTIONS = [5, 10, 20, 50, 100];
+
+  const hasFilters = Boolean(category || fromDate || toDate);
 
   const handlePageSizeChange = (value: string | null) => {
     if (value == null) return;
@@ -154,8 +161,38 @@ export default function HistoryPage() {
     setPage(1);
   };
 
+  const handleCategoryChange = (value: string | null) => {
+    setCategory(value && value !== 'todos' ? value : '');
+    setPage(1);
+  };
+
+  const handleFromDateChange = (value: string) => {
+    setFromDate(value);
+    setPage(1);
+  };
+
+  const handleToDateChange = (value: string) => {
+    setToDate(value);
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setCategory('');
+    setFromDate('');
+    setToDate('');
+    setPage(1);
+  };
+
+  const { data: categories } = useObjectCategories();
+
   // Usa el hook centralizado — query key 'objects' compartida con useObjects
-  const { data, isLoading } = useObjects({ page, page_size: pageSize });
+  const { data, isLoading } = useObjects({
+    page,
+    page_size: pageSize,
+    ...(category ? { category } : {}),
+    ...(fromDate ? { from_date: fromDate } : {}),
+    ...(toDate ? { to_date: toDate } : {}),
+  });
 
   const handleRowClick = (obj: DetectedObject) => {
     setSelectedObj(obj);
@@ -193,11 +230,6 @@ export default function HistoryPage() {
             </span>
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-1">Registro LER</h1>
-          <p className="text-muted-foreground text-sm">
-            {data?.total != null
-              ? `${data.total} objeto${data.total !== 1 ? 's' : ''} en el historial · Click en una fila para detalles`
-              : 'Click en cualquier fila para ver el detalle completo del análisis.'}
-          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -221,6 +253,81 @@ export default function HistoryPage() {
       <HistoryStats />
 
       <Separator className="opacity-30" />
+
+      {/* Filtros por categoría y rango de fechas */}
+      <div className="relative z-30 rounded-xl border border-border/60 bg-card/40 p-3 sm:p-4 animate-in stagger-2">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1 min-w-0">
+            <label
+              htmlFor="filter-category"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              Categoría
+            </label>
+            <Select value={category || 'todos'} onValueChange={handleCategoryChange}>
+              <SelectTrigger
+                id="filter-category"
+                className="h-9 w-full text-xs border-border/60 bg-card/60"
+              >
+                <SelectValue>{category || 'Todos'}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos" className="text-xs">
+                  Todos
+                </SelectItem>
+                {(categories ?? []).map((cat) => (
+                  <SelectItem key={cat} value={cat} className="text-xs capitalize">
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-full sm:w-44">
+            <label
+              htmlFor="filter-from"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              Desde
+            </label>
+            <DatePicker
+              id="filter-from"
+              value={fromDate}
+              onChange={handleFromDateChange}
+              max={toDate || undefined}
+              placeholder="Seleccionar"
+            />
+          </div>
+
+          <div className="w-full sm:w-44">
+            <label
+              htmlFor="filter-to"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground"
+            >
+              Hasta
+            </label>
+            <DatePicker
+              id="filter-to"
+              value={toDate}
+              onChange={handleToDateChange}
+              min={fromDate || undefined}
+              placeholder="Seleccionar"
+            />
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearFilters}
+            disabled={!hasFilters}
+            className="h-9 gap-1.5 text-xs border-border/60 disabled:opacity-40"
+          >
+            <X size={13} />
+            Limpiar
+          </Button>
+        </div>
+      </div>
 
       {/* Table */}
       <div className="rounded-xl border border-border/60 bg-card/50 overflow-hidden animate-in stagger-2">
@@ -269,16 +376,35 @@ export default function HistoryPage() {
                       <div className="w-12 h-12 rounded-xl bg-muted/30 flex items-center justify-center">
                         <Layers size={20} className="text-muted-foreground/40" />
                       </div>
-                      <p className="text-sm">
-                        No hay registros aún.{' '}
-                        <span className="text-primary">Inicia escaneando un residuo.</span>
-                      </p>
+                      {hasFilters ? (
+                        <>
+                          <p className="text-sm">No hay registros con estos filtros.</p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={clearFilters}
+                            className="gap-1.5 text-xs border-border/60 hover:border-primary/40 hover:text-primary"
+                          >
+                            <X size={13} />
+                            Limpiar filtros
+                          </Button>
+                        </>
+                      ) : (
+                        <p className="text-sm">
+                          No hay registros aún.{' '}
+                          <span className="text-primary">Inicia escaneando un residuo.</span>
+                        </p>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
                 data?.items.map((obj: DetectedObject) => {
                   const score = obj.energy_data?.energy_score ?? 0;
+                  const hasEnergyPotential =
+                    score > 0 ||
+                    (obj.energy_data?.kwh_per_unit ?? 0) > 0 ||
+                    (obj.energy_data?.kwh_per_kg ?? 0) > 0;
                   return (
                     <TableRow
                       key={obj.id}
@@ -332,16 +458,20 @@ export default function HistoryPage() {
                         <Badge className={`text-[10px] capitalize border ${getCategoryStyle(obj.object_category)}`}>
                           {obj.object_category}
                         </Badge>
-                        {obj.energy_data?.ler_code && (
-                          <code className="block font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded mt-1.5 w-fit">
-                            {obj.energy_data.ler_code}
-                          </code>
-                        )}
+                        <code
+                          className={`block font-mono text-[10px] px-1.5 py-0.5 rounded mt-1.5 w-fit border ${
+                            obj.energy_data?.ler_code
+                              ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                              : 'text-muted-foreground bg-muted/30 border-border/50'
+                          }`}
+                        >
+                          {obj.energy_data?.ler_code || 'No aplica'}
+                        </code>
                       </TableCell>
 
                       {/* Energy score */}
                       <TableCell className="text-right">
-                        {obj.energy_data?.energy_score != null ? (
+                        {hasEnergyPotential ? (
                           <div className="flex flex-col items-end gap-1.5">
                             <span className={`text-xl font-black leading-none ${getScoreColor(score)}`}>
                               {score}
@@ -351,6 +481,10 @@ export default function HistoryPage() {
                               className={`h-1.5 w-20 bg-muted/30 ${getScoreBarClass(score)}`}
                             />
                           </div>
+                        ) : obj.energy_data != null ? (
+                          <span className="inline-block text-[11px] font-medium text-muted-foreground bg-muted/30 border border-border/50 px-2 py-0.5 rounded-md">
+                            Nulo
+                          </span>
                         ) : (
                           <span className="text-muted-foreground/40 text-sm">—</span>
                         )}

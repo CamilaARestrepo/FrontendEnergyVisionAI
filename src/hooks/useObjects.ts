@@ -53,6 +53,17 @@ export function useObjectStats() {
 }
 
 /**
+ * Categorías distintas disponibles para filtrar el historial.
+ */
+export function useObjectCategories() {
+  return useQuery<string[]>({
+    queryKey: [OBJECTS_QUERY_KEY, 'categories'],
+    queryFn: () => objectsService.getCategories(),
+    staleTime: 60_000,
+  });
+}
+
+/**
  * Detalle de un objeto por su ID.
  * Los datos incluyen energy_data anidados.
  */

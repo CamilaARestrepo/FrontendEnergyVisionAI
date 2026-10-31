@@ -12,6 +12,12 @@ export const objectsService = {
     const { data } = await api.get('/objects/stats');
     return data;
   },
+
+  /** Categorías distintas del historial para el filtro de Registro LER. */
+  getCategories: async (): Promise<string[]> => {
+    const { data } = await api.get('/objects/categories');
+    return data;
+  },
   /**
    * Lista objetos con filtros, paginación y ordenamiento.
    * Nombre canónico esperado por useObjects hook.

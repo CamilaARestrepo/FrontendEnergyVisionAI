@@ -75,7 +75,7 @@ function parseListField(value: string | string[] | undefined): string[] {
 }
 
 /** Anillo de progreso para el Energy Score */
-function ScoreRing({ value, size = 86 }: { value: number; size?: number }) {
+function ScoreRing({ value, size = 86, empty = false }: { value: number; size?: number; empty?: boolean }) {
   const stroke = 8;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -94,26 +94,34 @@ function ScoreRing({ value, size = 86 }: { value: number; size?: number }) {
           strokeWidth={stroke}
           className="text-muted/50"
         />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)' }}
-        />
+        {!empty && (
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={color}
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)' }}
+          />
+        )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`text-2xl font-black leading-none ${getScoreColor(value)}`}>
-          {value}
-        </span>
-        <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
-          / 100
-        </span>
+        {empty ? (
+          <span className="text-sm font-semibold text-muted-foreground">Nulo</span>
+        ) : (
+          <>
+            <span className={`text-2xl font-black leading-none ${getScoreColor(value)}`}>
+              {value}
+            </span>
+            <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+              / 100
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -155,6 +163,10 @@ export default function ScanResultsPanel({ data }: ResultProps) {
 
   const energyData = energy ?? object.energy_data;
   const score = energyData?.energy_score ?? 0;
+  const hasEnergyPotential =
+    score > 0 ||
+    (energyData?.kwh_per_unit ?? 0) > 0 ||
+    (energyData?.kwh_per_kg ?? 0) > 0;
   const valorizationMethods = parseListField(energyData?.valorization_methods as any);
   const reuseSuggestions = parseListField(object.reuse_suggestions as any);
   const provider = ai_provider ?? object.ai_provider;
@@ -227,16 +239,20 @@ export default function ScanResultsPanel({ data }: ResultProps) {
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                 Confianza {confidencePct}%
               </span>
-              <span className="sm:hidden inline-flex items-center gap-1 font-semibold text-amber-400">
+              <span
+                className={`sm:hidden inline-flex items-center gap-1 font-semibold ${
+                  hasEnergyPotential ? 'text-amber-400' : 'text-muted-foreground'
+                }`}
+              >
                 <BatteryCharging size={11} />
-                {score}/100
+                {hasEnergyPotential ? `${score}/100` : 'Nulo'}
               </span>
             </div>
           </div>
 
           {/* Energy score ring (desktop) */}
           <div className="hidden sm:flex flex-col items-center gap-1 shrink-0 self-center">
-            <ScoreRing value={score} />
+            <ScoreRing value={score} empty={!hasEnergyPotential} />
             <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
               Energy Score
             </span>
@@ -293,11 +309,15 @@ export default function ScanResultsPanel({ data }: ResultProps) {
                 </div>
                 <h3 className="font-semibold text-foreground text-sm">Protocolo LER</h3>
               </div>
-              {energyData?.ler_code && (
-                <code className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-md tracking-wider">
-                  {energyData.ler_code}
-                </code>
-              )}
+              <code
+                className={`text-[11px] font-bold px-2 py-0.5 rounded-md tracking-wider border ${
+                  energyData?.ler_code
+                    ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/25'
+                    : 'text-muted-foreground bg-muted/30 border-border/50'
+                }`}
+              >
+                {energyData?.ler_code || 'No aplica'}
+              </code>
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-4 flex flex-col gap-2.5">
@@ -336,26 +356,52 @@ export default function ScanResultsPanel({ data }: ResultProps) {
                 <BatteryCharging size={15} />
               </div>
               <h3 className="font-semibold text-foreground text-sm">Potencial Energético</h3>
+              {!hasEnergyPotential && (
+                <Badge className="ml-auto text-[10px] bg-muted/30 text-muted-foreground border border-border/50">
+                  Nulo
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-4 flex flex-col gap-3">
-            <Progress value={score} className={`h-1.5 bg-muted/50 ${getScoreBarColor(score)}`} />
+            {hasEnergyPotential ? (
+              <Progress value={score} className={`h-1.5 bg-muted/50 ${getScoreBarColor(score)}`} />
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/20 px-2.5 py-2">
+                <BatteryCharging size={13} className="text-muted-foreground shrink-0" />
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Este residuo no tiene potencial energético aprovechable.
+                </p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-border/50 bg-muted/20 px-2.5 py-2">
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                   kWh / Unidad
                 </p>
-                <p className="text-base font-bold text-foreground leading-tight">
-                  {energyData?.kwh_per_unit?.toFixed(2) ?? '0.00'}
+                <p
+                  className={`text-base font-bold leading-tight ${
+                    hasEnergyPotential ? 'text-foreground' : 'text-muted-foreground'
+                  }`}
+                >
+                  {hasEnergyPotential
+                    ? (energyData?.kwh_per_unit?.toFixed(2) ?? '0.00')
+                    : 'Nulo'}
                 </p>
               </div>
               <div className="rounded-lg border border-border/50 bg-muted/20 px-2.5 py-2">
                 <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
                   kWh / Kg
                 </p>
-                <p className="text-base font-bold text-foreground leading-tight">
-                  {energyData?.kwh_per_kg?.toFixed(2) ?? '0.00'}
+                <p
+                  className={`text-base font-bold leading-tight ${
+                    hasEnergyPotential ? 'text-foreground' : 'text-muted-foreground'
+                  }`}
+                >
+                  {hasEnergyPotential
+                    ? (energyData?.kwh_per_kg?.toFixed(2) ?? '0.00')
+                    : 'Nulo'}
                 </p>
               </div>
             </div>
@@ -395,11 +441,15 @@ export default function ScanResultsPanel({ data }: ResultProps) {
               `Clasificado en la jerarquía como ${energyData?.waste_hierarchy_level}. Prioriza la prevención y la reutilización antes del reciclaje o la valorización energética.`}
           </p>
           <div className="flex flex-wrap gap-1.5 mt-3">
-            {energyData?.ler_code && (
-              <Badge className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
-                LER {energyData.ler_code}
-              </Badge>
-            )}
+            <Badge
+              className={`text-[10px] border ${
+                energyData?.ler_code
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                  : 'bg-muted/30 text-muted-foreground border-border/50'
+              }`}
+            >
+              {energyData?.ler_code ? `LER ${energyData.ler_code}` : 'LER: No aplica'}
+            </Badge>
             {energyData?.waste_hierarchy_level && (
               <Badge className={`text-[10px] capitalize border ${getHierarchyStyle(energyData.waste_hierarchy_level)}`}>
                 <Layers size={9} className="mr-1" />

@@ -26,6 +26,27 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const UNRECOGNIZED_PATTERN =
+  /no se reconoci[oó]|no reconocido|no identificable|no identificado|desconocido|unknown/i;
+
+/** Detecta el 422 de "residuo no reconocido" devuelto por el backend. */
+function isUnrecognizedError(error: any): boolean {
+  const status = error?.response?.status;
+  const detail = String(error?.response?.data?.detail ?? '');
+  return status === 422 && UNRECOGNIZED_PATTERN.test(detail);
+}
+
+/** Red de seguridad por si un resultado antiguo o en caché viene sin reconocer. */
+function isUnrecognizedResult(object: {
+  object_name?: string;
+  confidence_score?: number | null;
+}): boolean {
+  return (
+    (object.confidence_score ?? 0) < 0.3 ||
+    UNRECOGNIZED_PATTERN.test(object.object_name ?? '')
+  );
+}
+
 export default function Dashboard() {
   const { currentFile, lastResult, clearScan } = useScanStore();
   const queryClient = useQueryClient();
@@ -34,6 +55,16 @@ export default function Dashboard() {
   const { scan: scanImage, isPending } = useScan({
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [OBJECTS_QUERY_KEY] });
+
+      if (isUnrecognizedResult(data.object)) {
+        toast.error('Residuo no reconocido', {
+          description:
+            'La imagen no contiene un residuo identificable. Toma o carga una nueva foto.',
+          duration: 8000,
+        });
+        return;
+      }
+
       setAnalyzeOpen(false);
 
       if (data.cached) {
@@ -51,7 +82,21 @@ export default function Dashboard() {
       });
     },
     onError: (error: any) => {
-      const detail = error?.response?.data?.detail || error.message || 'Error desconocido';
+      const responseDetail = error?.response?.data?.detail;
+
+      if (isUnrecognizedError(error)) {
+        // Mantener el modal abierto y conservar la imagen como referencia.
+        // Solo se limpia cuando el usuario pulsa "Cargar nueva imagen".
+        toast.error('Residuo no reconocido', {
+          description:
+            responseDetail ||
+            'La imagen no contiene un residuo identificable. Toma o carga una nueva foto.',
+          duration: 9000,
+        });
+        return;
+      }
+
+      const detail = responseDetail || error.message || 'Error desconocido';
       toast.error('Error en el Scanner', {
         description: detail,
         duration: 6000,

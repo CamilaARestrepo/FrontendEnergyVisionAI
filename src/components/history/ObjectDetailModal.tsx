@@ -154,6 +154,10 @@ export default function ObjectDetailModal({ object: obj, open, onClose, onDelete
 
   const energy      = obj.energy_data;
   const score       = energy?.energy_score ?? 0;
+  const hasEnergyPotential =
+    score > 0 ||
+    (energy?.kwh_per_unit ?? 0) > 0 ||
+    (energy?.kwh_per_kg ?? 0) > 0;
   const confPct     = Math.round((obj.confidence_score ?? 0) * 100);
   const methods     = parseList(energy?.valorization_methods);
   const suggestions = parseList(obj.reuse_suggestions);
@@ -234,9 +238,13 @@ export default function ObjectDetailModal({ object: obj, open, onClose, onDelete
                     <Hash size={9} />
                     ID {obj.id}
                   </span>
-                  {energy?.energy_score != null && (
-                    <span className={`text-[10px] font-bold ${getScoreColor(score)}`}>
-                      E.Score {score}/100
+                  {energy != null && (
+                    <span
+                      className={`text-[10px] font-bold ${
+                        hasEnergyPotential ? getScoreColor(score) : 'text-muted-foreground'
+                      }`}
+                    >
+                      E.Score {hasEnergyPotential ? `${score}/100` : 'Nulo'}
                     </span>
                   )}
                 </div>
@@ -332,7 +340,9 @@ export default function ObjectDetailModal({ object: obj, open, onClose, onDelete
                       {energy.ler_code}
                     </code>
                   ) : (
-                    <span className="text-sm text-muted-foreground/50">—</span>
+                    <span className="text-sm font-medium text-muted-foreground bg-muted/30 border border-border/50 px-2 py-0.5 rounded-md inline-block mt-0.5">
+                      No aplica
+                    </span>
                   )}
                 </div>
 
@@ -351,30 +361,53 @@ export default function ObjectDetailModal({ object: obj, open, onClose, onDelete
             <div className="p-5">
               <SH icon={BatteryCharging} label="Potencial Energético" ibg="bg-amber-500/15" ic="text-amber-400" />
 
-              <div className="flex items-end gap-2 mb-2">
-                <span className={`text-4xl font-black leading-none ${getScoreColor(score)}`}>
-                  {score}
-                </span>
-                <div className="pb-0.5">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    / 100
-                  </span>
-                  <p className="text-[10px] text-muted-foreground">Energy Score</p>
+              {hasEnergyPotential ? (
+                <>
+                  <div className="flex items-end gap-2 mb-2">
+                    <span className={`text-4xl font-black leading-none ${getScoreColor(score)}`}>
+                      {score}
+                    </span>
+                    <div className="pb-0.5">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                        / 100
+                      </span>
+                      <p className="text-[10px] text-muted-foreground">Energy Score</p>
+                    </div>
+                  </div>
+                  <Progress value={score} className={`h-1.5 bg-muted/50 mb-4 ${getScoreBar(score)}`} />
+                </>
+              ) : (
+                <div className="mb-4">
+                  <span className="text-2xl font-bold text-muted-foreground">Nulo</span>
+                  <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                    Este residuo no tiene potencial energético aprovechable.
+                  </p>
                 </div>
-              </div>
-              <Progress value={score} className={`h-1.5 bg-muted/50 mb-4 ${getScoreBar(score)}`} />
+              )}
 
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div className="stat-card">
                   <FL>kWh / Unidad</FL>
-                  <p className="text-lg font-bold text-foreground">
-                    {energy?.kwh_per_unit?.toFixed(2) ?? '0.00'}
+                  <p
+                    className={`text-lg font-bold ${
+                      hasEnergyPotential ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {hasEnergyPotential
+                      ? (energy?.kwh_per_unit?.toFixed(2) ?? '0.00')
+                      : 'Nulo'}
                   </p>
                 </div>
                 <div className="stat-card">
                   <FL>kWh / Kg</FL>
-                  <p className="text-lg font-bold text-foreground">
-                    {energy?.kwh_per_kg?.toFixed(2) ?? '0.00'}
+                  <p
+                    className={`text-lg font-bold ${
+                      hasEnergyPotential ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {hasEnergyPotential
+                      ? (energy?.kwh_per_kg?.toFixed(2) ?? '0.00')
+                      : 'Nulo'}
                   </p>
                 </div>
               </div>
