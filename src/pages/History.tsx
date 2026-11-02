@@ -7,7 +7,7 @@
  * - Query key 'objects' (consistente con useObjects hook)
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import {
   Select,
@@ -16,7 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useObjects, useDeleteObject, useObjectCategories } from '@/hooks/useObjects';
+import {
+  useObjects,
+  useDeleteObject,
+  useObjectCategories,
+  useObjectStats,
+} from '@/hooks/useObjects';
 import type { DetectedObject } from '@/types/object.types';
 import {
   DownloadCloud,
@@ -184,6 +189,7 @@ export default function HistoryPage() {
   };
 
   const { data: categories } = useObjectCategories();
+  const { data: stats } = useObjectStats();
 
   // Usa el hook centralizado — query key 'objects' compartida con useObjects
   const { data, isLoading } = useObjects({
@@ -193,6 +199,18 @@ export default function HistoryPage() {
     ...(fromDate ? { from_date: fromDate } : {}),
     ...(toDate ? { to_date: toDate } : {}),
   });
+
+  // Fallback: si /objects/categories tarda o falla, se completan las opciones
+  // con el resumen y con las categorías de los registros ya cargados.
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    (categories ?? []).forEach((c) => set.add(c));
+    (stats?.top_categories ?? []).forEach((c) => set.add(c.category));
+    (data?.items ?? []).forEach((obj) => {
+      if (obj.object_category) set.add(obj.object_category);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'es'));
+  }, [categories, stats, data]);
 
   const handleRowClick = (obj: DetectedObject) => {
     setSelectedObj(obj);
@@ -275,7 +293,7 @@ export default function HistoryPage() {
                 <SelectItem value="todos" className="text-xs">
                   Todos
                 </SelectItem>
-                {(categories ?? []).map((cat) => (
+                {(categoryOptions ?? []).map((cat) => (
                   <SelectItem key={cat} value={cat} className="text-xs capitalize">
                     {cat}
                   </SelectItem>
